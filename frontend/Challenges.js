@@ -1,7 +1,5 @@
 import { useState } from "react";
 
-const API = "https://learnova-backend-266m.onrender.com";
-
 const DAILY_CHALLENGES = [
   {
     level: "Beginner",
@@ -28,9 +26,9 @@ const DAILY_CHALLENGES = [
     color: "#f59e0b",
     emoji: "⚡",
     title: "Palindrome Check",
-    description: "Write a function that checks if a given string is a palindrome (reads the same forwards and backwards). Test it with 'racecar', 'hello', 'madam'.",
+    description: "Write a function that checks if a given string is a palindrome. Test it with 'racecar', 'hello', 'madam'.",
     hint: "Compare the string with its reverse using string[::-1]",
-    starter: 'def is_palindrome(text):\n    # Your code here...\n    pass\n\n# Test your function\nprint(is_palindrome("racecar"))  # True\nprint(is_palindrome("hello"))    # False\nprint(is_palindrome("madam"))    # True',
+    starter: 'def is_palindrome(text):\n    # Your code here...\n    pass\n\nprint(is_palindrome("racecar"))  # True\nprint(is_palindrome("hello"))    # False\nprint(is_palindrome("madam"))    # True',
     solution: 'def is_palindrome(text):\n    text = text.lower().replace(" ", "")\n    return text == text[::-1]\n\nprint(is_palindrome("racecar"))  # True\nprint(is_palindrome("hello"))    # False\nprint(is_palindrome("madam"))    # True',
   },
   {
@@ -48,20 +46,18 @@ const DAILY_CHALLENGES = [
     color: "#ef4444",
     emoji: "🔥",
     title: "Student Grade System",
-    description: "Create a class 'Student' with name and marks list. Add methods to calculate average, find highest mark, and determine grade (A/B/C/F).",
+    description: "Create a class 'Student' with name and marks list. Add methods to calculate average, find highest mark, and determine grade.",
     hint: "Use sum()/len() for average, max() for highest, and if/elif for grade.",
-    starter: 'class Student:\n    def __init__(self, name, marks):\n        self.name = name\n        self.marks = marks\n    \n    def average(self):\n        # Your code here...\n        pass\n    \n    def highest(self):\n        # Your code here...\n        pass\n    \n    def grade(self):\n        # Your code here...\n        pass\n\ns = Student("Alice", [85, 92, 78, 95, 88])\nprint(f"Average: {s.average()}")\nprint(f"Highest: {s.highest()}")\nprint(f"Grade: {s.grade()}")',
+    starter: 'class Student:\n    def __init__(self, name, marks):\n        self.name = name\n        self.marks = marks\n    \n    def average(self):\n        pass\n    \n    def highest(self):\n        pass\n    \n    def grade(self):\n        pass\n\ns = Student("Alice", [85, 92, 78, 95, 88])\nprint(f"Average: {s.average()}")\nprint(f"Highest: {s.highest()}")\nprint(f"Grade: {s.grade()}")',
     solution: 'class Student:\n    def __init__(self, name, marks):\n        self.name = name\n        self.marks = marks\n    \n    def average(self):\n        return sum(self.marks) / len(self.marks)\n    \n    def highest(self):\n        return max(self.marks)\n    \n    def grade(self):\n        avg = self.average()\n        if avg >= 90: return "A"\n        elif avg >= 80: return "B"\n        elif avg >= 70: return "C"\n        else: return "F"\n\ns = Student("Alice", [85, 92, 78, 95, 88])\nprint(f"Average: {s.average()}")\nprint(f"Highest: {s.highest()}")\nprint(f"Grade: {s.grade()}")',
   },
 ];
 
 export default function Challenges({ setSharedCode, setActiveTab }) {
   const [selected, setSelected] = useState(null);
-  const [showSolution, setShowSolution] = useState(false);
 
   function startChallenge(ch) {
     setSelected(ch);
-    setShowSolution(false);
   }
 
   function tryInRunner() {
@@ -87,9 +83,7 @@ export default function Challenges({ setSharedCode, setActiveTab }) {
             <button
               key={i}
               onClick={() => startChallenge(ch)}
-              style={{ textAlign: "left", padding: "18px 20px", borderRadius: "14px", background: "rgba(255,255,255,0.04)", border: `1px solid ${ch.color}30`, cursor: "pointer", transition: "all 0.2s" }}
-              onMouseEnter={e => e.currentTarget.style.background = `${ch.color}10`}
-              onMouseLeave={e => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
+              style={{ textAlign: "left", padding: "18px 20px", borderRadius: "14px", background: "rgba(255,255,255,0.04)", border: `1px solid ${ch.color}30`, cursor: "pointer" }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "6px" }}>
                 <span style={{ fontSize: "20px" }}>{ch.emoji}</span>
@@ -103,9 +97,8 @@ export default function Challenges({ setSharedCode, setActiveTab }) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <button onClick={() => setSelected(null)} style={{ alignSelf: "flex-start", padding: "6px 14px", borderRadius: "8px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: "13px", cursor: "pointer" }}>
-            ← Back to Challenges
+            ← Back
           </button>
-
           <div style={{ padding: "20px", borderRadius: "14px", background: "rgba(255,255,255,0.04)", border: `1px solid ${selected.color}30` }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
               <span style={{ fontSize: "24px" }}>{selected.emoji}</span>
@@ -113,7 +106,7 @@ export default function Challenges({ setSharedCode, setActiveTab }) {
               <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "999px", background: `${selected.color}20`, color: selected.color, marginLeft: "auto" }}>{selected.level}</span>
             </div>
             <p style={{ fontSize: "14px", color: "rgba(255,255,255,0.7)", lineHeight: "1.6", marginBottom: "12px" }}>{selected.description}</p>
-            <div style={{ padding: "12px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", marginBottom: "16px" }}>
+            <div style={{ padding: "12px", borderRadius: "8px", background: "rgba(255,255,255,0.05)", marginBottom: "16px" }}>
               <p style={{ fontSize: "12px", color: "#fbbf24", marginBottom: "4px" }}>💡 Hint:</p>
               <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.6)" }}>{selected.hint}</p>
             </div>

@@ -28,10 +28,10 @@ export default function CodeRunner({ sharedCode, setSharedCode, lang }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       <div>
-        <h2 className="text-xl font-semibold mb-1">▶ Code Runner</h2>
-        <p className="text-white/40 text-sm">Run your Python code live and see the output instantly.</p>
+        <h2 style={{ fontSize: "20px", fontWeight: "600", marginBottom: "4px" }}>▶ Code Runner</h2>
+        <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "14px" }}>Run your Python code live and see the output instantly.</p>
       </div>
 
       <textarea
@@ -39,27 +39,27 @@ export default function CodeRunner({ sharedCode, setSharedCode, lang }) {
         value={sharedCode}
         onChange={e => setSharedCode(e.target.value)}
         placeholder="Paste Python code here and hit Run…"
-        className="w-full bg-white/5 border border-white/10 rounded-xl p-4 font-mono text-sm text-white/90 outline-none focus:border-violet-500 resize-none"
+        style={{ width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", padding: "16px", fontFamily: "monospace", fontSize: "14px", color: "rgba(255,255,255,0.9)", outline: "none", resize: "none" }}
       />
 
       <button
         onClick={run}
         disabled={loading || !sharedCode.trim()}
-        className="w-full py-3 rounded-xl bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed font-medium transition"
+        style={{ width: "100%", padding: "12px", borderRadius: "12px", background: "#16a34a", border: "none", color: "white", fontWeight: "500", fontSize: "15px", cursor: loading ? "not-allowed" : "pointer", opacity: loading || !sharedCode.trim() ? 0.5 : 1 }}
       >
         {loading ? "Running…" : "▶ Run Code"}
       </button>
 
       {(output || runError) && (
-        <div>
-          <p className="text-sm text-white/40 mb-2">Output</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+          <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)" }}>Output</p>
           {output && (
-            <pre className="bg-black/50 border border-white/10 rounded-xl p-4 text-sm font-mono text-green-300 overflow-x-auto whitespace-pre-wrap">
+            <pre style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", padding: "16px", fontSize: "13px", fontFamily: "monospace", color: "#86efac", overflowX: "auto", whiteSpace: "pre-wrap" }}>
               {output}
             </pre>
           )}
           {runError && (
-            <pre className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-sm font-mono text-red-300 overflow-x-auto whitespace-pre-wrap mt-2">
+            <pre style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "12px", padding: "16px", fontSize: "13px", fontFamily: "monospace", color: "#fca5a5", overflowX: "auto", whiteSpace: "pre-wrap" }}>
               {runError}
             </pre>
           )}
@@ -67,8 +67,8 @@ export default function CodeRunner({ sharedCode, setSharedCode, lang }) {
       )}
 
       {lang !== "python" && (
-        <p className="text-xs text-yellow-400/60 text-center">
-          ⚠️ Live execution currently supports Python only. Switch language to Python to run code.
+        <p style={{ fontSize: "12px", color: "rgba(234,179,8,0.6)", textAlign: "center" }}>
+          Live execution supports Python only.
         </p>
       )}
     </div>

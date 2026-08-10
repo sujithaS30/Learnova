@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Login from "./components/Login";
 import CodeAnalyzer from "./components/CodeAnalyzer";
 import AnimationExplainer from "./components/AnimationExplainer";
 import AskAI from "./components/AskAI";
@@ -8,7 +9,7 @@ import Templates from "./components/Templates";
 import Concepts from "./components/Concepts";
 import Challenges from "./components/Challenges";
 import Roadmap from "./components/Roadmap";
- 
+
 const TABS = [
   { id: "analyze",    label: "🔍 Analyze"    },
   { id: "animate",    label: "🎬 Animate"    },
@@ -20,16 +21,38 @@ const TABS = [
   { id: "challenges", label: "🏆 Challenges" },
   { id: "roadmap",    label: "🗺️ Roadmap"    },
 ];
- 
+
 export default function App() {
+  const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState("analyze");
   const [sharedCode, setSharedCode] = useState("");
- 
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      try { setUser(JSON.parse(savedUser)); } catch {}
+    }
+  }, []);
+
+  function handleLogin(userData) {
+    setUser(userData);
+  }
+
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+  }
+
+  if (!user) {
+    return <Login onLogin={handleLogin} />;
+  }
+
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#0f0f11", color: "white", fontFamily: "sans-serif" }}>
- 
+
       {/* Header */}
-      <header style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <header style={{ borderBottom: "1px solid rgba(255,255,255,0.1)", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <span style={{ fontSize: "22px", fontWeight: "700", background: "linear-gradient(to right, #a78bfa, #67e8f9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             Learnova
@@ -38,10 +61,25 @@ export default function App() {
             🐍 Python Learning Platform
           </span>
         </div>
-        <span style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)" }}>Python only</span>
+
+        {/* User info + logout */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "linear-gradient(135deg, #7c3aed, #0891b2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "600" }}>
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <span style={{ fontSize: "14px", color: "rgba(255,255,255,0.8)" }}>{user.name}</span>
+          </div>
+          <button
+            onClick={handleLogout}
+            style={{ padding: "6px 14px", borderRadius: "8px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)", fontSize: "13px", cursor: "pointer" }}
+          >
+            Logout
+          </button>
+        </div>
       </header>
- 
-      {/* Tab Bar - scrollable */}
+
+      {/* Tab Bar */}
       <div style={{ display: "flex", gap: "2px", padding: "12px 24px 0", borderBottom: "1px solid rgba(255,255,255,0.1)", overflowX: "auto" }}>
         {TABS.map(t => (
           <button
@@ -64,7 +102,7 @@ export default function App() {
           </button>
         ))}
       </div>
- 
+
       {/* Content */}
       <main style={{ maxWidth: "860px", margin: "0 auto", padding: "32px 24px" }}>
         {activeTab === "analyze"    && <CodeAnalyzer sharedCode={sharedCode} setSharedCode={setSharedCode} lang="python" />}
@@ -80,4 +118,3 @@ export default function App() {
     </div>
   );
 }
- 

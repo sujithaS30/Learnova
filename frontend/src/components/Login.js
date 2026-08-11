@@ -17,11 +17,15 @@ export default function Login({ onLogin }) {
     setError("");
     try {
       if (isRegister) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 60000);
         const res = await fetch(`${API}/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
-        });
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+        signal: controller.signal,
+});
+clearTimeout(timeout);
         const data = await res.json();
         if (!res.ok) { setError(data.detail || "Registration failed"); setLoading(false); return; }
         localStorage.setItem("token", data.access_token);

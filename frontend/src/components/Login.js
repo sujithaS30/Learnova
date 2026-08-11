@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const API = "https://learnova-backend-266m.onrender.com";
 
@@ -9,12 +9,18 @@ export default function Login({ onLogin }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [waking, setWaking] = useState(false);
+  const [status, setStatus] = useState("");
 
-  async function wakeBackend() {
-    try {
-      await fetch(`${API}/`, { method: "GET" });
-    } catch {}
+  // Wake up backend when page loads
+  useEffect(() => {
+    setStatus("⏳ Connecting to server...");
+    fetch(`${API}/`)
+      .then(() => setStatus("✅ Server is ready!"))
+      .catch(() => setStatus("⚠️ Server is starting up, please wait..."));
+  }, []);
+
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   async function handleSubmit() {
@@ -22,37 +28,55 @@ export default function Login({ onLogin }) {
     if (isRegister && !name) { setError("Please enter your name"); return; }
     setLoading(true);
     setError("");
-    setWaking(true);
 
-    // Wake up backend first
-    await wakeBackend();
-    setWaking(false);
+    // Try up to 3 times
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        setStatus(`Attempt ${attempt}/3 — please wait...`);
 
-    try {
-      if (isRegister) {
-        const res = await fetch(`${API}/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
-        });
-        const data = await res.json();
-        if (!res.ok) { setError(data.detail || "Registration failed"); setLoading(false); return; }
-        localStorage.setItem("token", data.access_token);
-        localStorage.setItem("user", JSON.stringify({ name: data.name, email: data.email }));
-        onLogin({ name: data.name, email: data.email });
-      } else {
-        const formData = new FormData();
-        formData.append("username", email);
-        formData.append("password", password);
-        const res = await fetch(`${API}/login`, { method: "POST", body: formData });
-        const data = await res.json();
-        if (!res.ok) { setError(data.detail || "Invalid email or password"); setLoading(false); return; }
-        localStorage.setItem("token", data.access_token);
-        localStorage.setItem("user", JSON.stringify({ name: data.name, email: data.email }));
-        onLogin({ name: data.name, email: data.email });
+        if (isRegister) {
+          const res = await fetch(`${API}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            setError(data.detail || "Registration failed");
+            setLoading(false);
+            setStatus("");
+            return;
+          }
+          localStorage.setItem("token", data.access_token);
+          localStorage.setItem("user", JSON.stringify({ name: data.name, email: data.email }));
+          onLogin({ name: data.name, email: data.email });
+          return;
+        } else {
+          const formData = new FormData();
+          formData.append("username", email);
+          formData.append("password", password);
+          const res = await fetch(`${API}/login`, { method: "POST", body: formData });
+          const data = await res.json();
+          if (!res.ok) {
+            setError(data.detail || "Invalid email or password");
+            setLoading(false);
+            setStatus("");
+            return;
+          }
+          localStorage.setItem("token", data.access_token);
+          localStorage.setItem("user", JSON.stringify({ name: data.name, email: data.email }));
+          onLogin({ name: data.name, email: data.email });
+          return;
+        }
+      } catch (e) {
+        if (attempt < 3) {
+          setStatus(`Server waking up... retrying in 5 seconds (${attempt}/3)`);
+          await sleep(5000);
+        } else {
+          setError("Server is still starting. Please wait 30 seconds and try again.");
+          setStatus("");
+        }
       }
-    } catch {
-      setError("Server took too long to respond. Please try clicking the button again!");
     }
     setLoading(false);
   }
@@ -67,6 +91,13 @@ export default function Login({ onLogin }) {
           </h1>
           <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "14px" }}>🐍 AI-Powered Python Learning Platform</p>
         </div>
+
+        {/* Server status */}
+        {status && (
+          <div style={{ padding: "8px 14px", borderRadius: "8px", background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.3)", color: "#c4b5fd", fontSize: "13px", textAlign: "center", marginBottom: "16px" }}>
+            {status}
+          </div>
+        )}
 
         <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "32px" }}>
 
@@ -110,16 +141,10 @@ export default function Login({ onLogin }) {
               </div>
             )}
 
-            {waking && (
-              <div style={{ padding: "10px 14px", borderRadius: "8px", background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.2)", color: "#c4b5fd", fontSize: "13px", textAlign: "center" }}>
-                ⏳ Waking up server... please wait 10 seconds
-              </div>
-            )}
-
             <button onClick={handleSubmit} disabled={loading}
               style={{ width: "100%", padding: "13px", borderRadius: "10px", background: "linear-gradient(to right, #7c3aed, #0891b2)", border: "none", color: "white", fontWeight: "600", fontSize: "15px", cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, marginTop: "4px" }}
             >
-              {waking ? "Waking up server..." : loading ? "Please wait…" : isRegister ? "Create Account" : "Login"}
+              {loading ? "Please wait…" : isRegister ? "Create Account" : "Login"}
             </button>
           </div>
         </div>

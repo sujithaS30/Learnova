@@ -9,14 +9,12 @@ export default function Login({ onLogin }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
 
-  // Wake up backend when page loads
+  // Silently warm up the backend as soon as the page loads.
+  // No status is shown to the user — this just quietly wakes
+  // up the server in the background before they finish typing.
   useEffect(() => {
-    setStatus("⏳ Connecting to server...");
-    fetch(`${API}/`)
-      .then(() => setStatus("✅ Server is ready!"))
-      .catch(() => setStatus("⚠️ Server is starting up, please wait..."));
+    fetch(`${API}/health`).catch(() => {});
   }, []);
 
   function sleep(ms) {
@@ -29,11 +27,10 @@ export default function Login({ onLogin }) {
     setLoading(true);
     setError("");
 
-    // Try up to 3 times
+    // Retry silently up to 3 times in the background.
+    // The user only ever sees the button say "Please wait…".
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        setStatus(`Attempt ${attempt}/3 — please wait...`);
-
         if (isRegister) {
           const res = await fetch(`${API}/register`, {
             method: "POST",
@@ -44,7 +41,6 @@ export default function Login({ onLogin }) {
           if (!res.ok) {
             setError(data.detail || "Registration failed");
             setLoading(false);
-            setStatus("");
             return;
           }
           localStorage.setItem("token", data.access_token);
@@ -60,7 +56,6 @@ export default function Login({ onLogin }) {
           if (!res.ok) {
             setError(data.detail || "Invalid email or password");
             setLoading(false);
-            setStatus("");
             return;
           }
           localStorage.setItem("token", data.access_token);
@@ -70,11 +65,9 @@ export default function Login({ onLogin }) {
         }
       } catch (e) {
         if (attempt < 3) {
-          setStatus(`Server waking up... retrying in 5 seconds (${attempt}/3)`);
           await sleep(5000);
         } else {
-          setError("Server is still starting. Please wait 30 seconds and try again.");
-          setStatus("");
+          setError("Something went wrong. Please try again.");
         }
       }
     }
@@ -91,13 +84,6 @@ export default function Login({ onLogin }) {
           </h1>
           <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "14px" }}>🐍 AI-Powered Python Learning Platform</p>
         </div>
-
-        {/* Server status */}
-        {status && (
-          <div style={{ padding: "8px 14px", borderRadius: "8px", background: "rgba(124,58,237,0.15)", border: "1px solid rgba(124,58,237,0.3)", color: "#c4b5fd", fontSize: "13px", textAlign: "center", marginBottom: "16px" }}>
-            {status}
-          </div>
-        )}
 
         <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "20px", padding: "32px" }}>
 

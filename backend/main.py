@@ -7,12 +7,16 @@ from dotenv import load_dotenv
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
+from sqlalchemy.orm import Session
 import os
 import subprocess
 import tempfile
 import sys
 import json
 import re
+
+from database import engine, Base, get_db
+from models import User
 
 load_dotenv()
 
@@ -25,10 +29,10 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-# Simple in-memory user store (replace with database later)
-users_db = {}
-
 app = FastAPI()
+
+# Creates the users table on startup if it doesn't already exist
+Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
@@ -77,40 +81,46 @@ def create_token(data: dict):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
-        if email is None or email not in users_db:
+        if email is None:
             raise HTTPException(status_code=401, detail="Invalid token")
-        return users_db[email]
+        user = db.query(User).filter(User.email == email).first()
+        if user is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        return user
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 # ── Auth Routes ──────────────────────────────────────────
 @app.post("/register")
-async def register(request: RegisterRequest):
-    if request.email in users_db:
+async def register(request: RegisterRequest, db: Session = Depends(get_db)):
+    existing = db.query(User).filter(User.email == request.email).first()
+    if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
-    users_db[request.email] = {
-        "name": request.name,
-        "email": request.email,
-        "password": hash_password(request.password)
-    }
+    new_user = User(
+        email=request.email,
+        name=request.name,
+        hashed_password=hash_password(request.password),
+    )
+    db.add(new_user)
+    db.commit()
     token = create_token({"sub": request.email})
     return Token(access_token=token, token_type="bearer", name=request.name, email=request.email)
 
 @app.post("/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = users_db.get(form_data.username)
-    if not user or not verify_password(form_data.password, user["password"]):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
-    token = create_token({"sub": form_data.username})
-    return Token(access_token=token, token_type="bearer", name=user["name"], email=user["email"])
+    token = create_token({"sub": user.email})
+    return Token(access_token=token, token_type="bearer", name=user.name, email=user.email)
 
 @app.get("/me")
-async def get_me(current_user: dict = Depends(get_current_user)):
-    return {"name": current_user["name"], "email": current_user["email"]}
+async def get_me(current_user: User = Depends(get_current_user)):
+    return {"name": current_user.name, "email": current_user.email}
 
 # ── Helper ───────────────────────────────────────────────
 def ask_groq(prompt: str) -> str:
@@ -131,6 +141,10 @@ def clean_json(text: str):
 @app.get("/")
 def root():
     return {"status": "Learnova backend running!"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 @app.post("/chat")
 async def chat(request: ChatRequest):

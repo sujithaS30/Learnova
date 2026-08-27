@@ -2,7 +2,7 @@
 
 **An AI-powered Python learning platform** — analyze code, generate visual explanations, run Python live, chat with an AI tutor, and test yourself with quizzes.
 
-🔗 **Live Demo:** [https://learnova.netlify.app](https://learnova.netlify.app)
+🔗 **Live Demo:** [https://learnova-python-compiler.vercel.app/}
 🔗 **Backend API:** [https://learnova-api.onrender.com](https://learnova-api.onrender.com)
 
 ## ✨ Features

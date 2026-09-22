@@ -8,6 +8,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 import os
 import subprocess
 import tempfile
@@ -123,13 +124,21 @@ async def get_me(current_user: User = Depends(get_current_user)):
     return {"name": current_user.name, "email": current_user.email}
 
 # ── Helper ───────────────────────────────────────────────
+# Model is configurable via env var so future migrations don't need a code change.
+# llama-3.3-70b-versatile was decommissioned by Groq on 2026-08-16.
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+
 def ask_groq(prompt: str) -> str:
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-    )
-    return response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model=GROQ_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        # Surface the real reason instead of silently returning nothing
+        raise HTTPException(status_code=502, detail=f"AI request failed: {e}")
 
 def clean_json(text: str):
     text = text.strip()
@@ -143,8 +152,15 @@ def root():
     return {"status": "Learnova backend running!"}
 
 @app.get("/health")
-def health():
-    return {"status": "ok"}
+def health(db: Session = Depends(get_db)):
+    # Run a trivial query so this ping also keeps the Supabase
+    # database active, not just the backend server itself.
+    try:
+        db.execute(text("SELECT 1"))
+        db_status = "ok"
+    except Exception:
+        db_status = "unreachable"
+    return {"status": "ok", "database": db_status}
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
